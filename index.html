@@ -4,28 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Flo — Budget</title>
-
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0c0e13">
 <meta name="mobile-web-app-capable" content="yes">
-
-<!-- iOS / Safari PWA -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Flo">
 <link rel="apple-touch-icon" href="icons/icon-152.png">
-<link rel="apple-touch-icon" sizes="72x72"  href="icons/icon-72.png">
-<link rel="apple-touch-icon" sizes="96x96"  href="icons/icon-96.png">
-<link rel="apple-touch-icon" sizes="128x128" href="icons/icon-128.png">
-<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144.png">
-<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
 <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
-
-<!-- Splash screen color for iOS -->
-<meta name="msapplication-TileColor" content="#0c0e13">
-<meta name="msapplication-TileImage" content="icons/icon-144.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -51,11 +39,12 @@
     --r-xs: 6px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;overflow:hidden;}
+  html{height:100%;height:-webkit-fill-available;}
+  body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;overflow:hidden;}
   #app{display:flex;height:100vh;height:100dvh;}
 
   /* SIDEBAR */
-  #sidebar{width:248px;min-width:248px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10;overflow:hidden;padding-top:env(safe-area-inset-top);}
+  #sidebar{width:248px;min-width:248px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10;overflow:hidden;padding-top:env(safe-area-inset-top,0px);}
   .sidebar-logo{padding:26px 22px 18px;border-bottom:1px solid var(--border);}
   .sidebar-logo h1{font-family:'Fraunces',serif;font-size:28px;font-weight:700;color:var(--accent);letter-spacing:-1.5px;line-height:1;}
   .sidebar-logo p{font-size:10px;color:var(--text-dim);margin-top:3px;font-weight:400;letter-spacing:1.5px;text-transform:uppercase;}
@@ -85,7 +74,7 @@
 
   /* MAIN */
   #main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
-  .top-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;padding-top:env(safe-area-inset-top);height:calc(62px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;}
+  .top-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;padding-top:env(safe-area-inset-top,0px);height:calc(62px + env(safe-area-inset-top,0px));display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-shrink:0;padding-bottom:10px;}
   .top-bar h2{font-family:'Fraunces',serif;font-size:21px;font-weight:500;letter-spacing:-.5px;}
   .top-actions{display:flex;gap:8px;align-items:center;}
   .btn-primary{background:var(--accent);color:#0c0e13;border:none;padding:9px 18px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:opacity .15s,transform .1s;font-family:'DM Sans',sans-serif;white-space:nowrap;}
@@ -275,13 +264,13 @@
   #mob-nav{display:none;}
   @media(max-width:700px){
     #sidebar{display:none;}
-    #mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:100;padding:6px env(safe-area-inset-right,0) env(safe-area-inset-bottom,6px) env(safe-area-inset-left,0);}
-    .mob-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px;background:none;border:none;color:var(--text-muted);font-size:10px;cursor:pointer;transition:color .15s;font-family:'DM Sans',sans-serif;}
-    .mob-btn .mi{font-size:19px;}
+    #mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:100;padding:8px env(safe-area-inset-right,0px) calc(env(safe-area-inset-bottom,0px) + 6px) env(safe-area-inset-left,0px);}
+    .mob-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;background:none;border:none;color:var(--text-muted);font-size:10px;cursor:pointer;transition:color .15s;font-family:'DM Sans',sans-serif;}
+    .mob-btn .mi{font-size:20px;}
     .mob-btn.active{color:var(--accent);}
-    #main{padding-bottom:68px;}
+    #main{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px));}
     .page{padding:14px;}
-    .top-bar{padding:0 14px;height:55px;}
+    .top-bar{padding-left:16px;padding-right:16px;height:calc(55px + env(safe-area-inset-top,0px));}
     .stats-grid{grid-template-columns:1fr 1fr;}
     .two-col{grid-template-columns:1fr;}
     .cat-col-header,.cat-item{grid-template-columns:1fr 80px 75px 30px;}
@@ -971,12 +960,62 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if(e.ke
 
 load();renderAll();
 
-// ── Register Service Worker ──
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+// ── Haptic Feedback ──
+function haptic(style='light'){
+  if(window.navigator && window.navigator.vibrate){
+    // Android
+    const patterns={light:10,medium:20,heavy:40,success:[10,50,10],error:[30,50,30]};
+    window.navigator.vibrate(patterns[style]||10);
+  }
+  // iOS uses AudioContext for subtle click (no Vibration API on iOS)
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator();
+    const g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    const vol={light:.04,medium:.07,heavy:.12,success:.06,error:.1};
+    const freq={light:300,medium:200,heavy:120,success:400,error:100};
+    const dur={light:.04,medium:.06,heavy:.1,success:.08,error:.12};
+    g.gain.setValueAtTime(vol[style]||.04, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+(dur[style]||.04));
+    o.frequency.setValueAtTime(freq[style]||300, ctx.currentTime);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime+(dur[style]||.04));
+    ctx.close();
+  }catch(e){}
+}
+
+// Wire haptics to all interactive elements
+document.addEventListener('click', e => {
+  const t = e.target.closest('button, .nav-item, .mob-btn, .cat-item, .rta-box, .goal-card, .account-card, .tx-item, .add-acc-card, .add-cat-inline');
+  if(!t) return;
+  if(t.matches('.btn-primary, .goal-add-btn')) haptic('medium');
+  else if(t.matches('.del-btn, .tx-del-btn, .goal-del, .acc-del')) haptic('error');
+  else if(t.matches('.nav-item, .mob-btn')) haptic('light');
+  else if(t.matches('.month-btn')) haptic('light');
+  else haptic('light');
+}, {passive:true});
+
+// Extra haptic on modal open/close
+const _origOpen = openModal;
+function openModal(html){ haptic('medium'); _origOpen(html); }
+const _origClose = closeModal;
+function closeModal(){ const m=document.getElementById('mOv'); if(m){ haptic('light'); m.remove(); } }
+
+// Haptic on successful save actions
+const _origToast = toast;
+function toast(msg){
+  if(msg.includes('!')||msg.includes('✓')) haptic('success');
+  else if(msg.includes('⚠')||msg.includes('deleted')||msg.includes('removed')) haptic('error');
+  _origToast(msg);
+}
+
+// ── Service Worker ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
     navigator.serviceWorker.register('/flo-budget/sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.log('SW registration failed:', err));
+      .then(r=>console.log('SW ready:',r.scope))
+      .catch(e=>console.log('SW failed:',e));
   });
 }
 </script>
