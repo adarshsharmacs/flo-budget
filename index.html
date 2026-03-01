@@ -953,6 +953,7 @@ function renderReports(){
 
 // MODAL
 function openModal(html){
+  haptic('medium');
   closeModal();
   const ov=document.createElement('div');ov.className='modal-overlay';ov.id='mOv';
   ov.innerHTML=`<div class="modal">${html}</div>`;
@@ -960,7 +961,10 @@ function openModal(html){
   document.body.appendChild(ov);
   setTimeout(()=>{const f=ov.querySelector('input');if(f)f.focus();},50);
 }
-function closeModal(){const m=document.getElementById('mOv');if(m)m.remove();}
+function closeModal(){
+  const m=document.getElementById('mOv');
+  if(m){haptic('light');m.remove();}
+}
 
 // EXPORT/IMPORT
 document.getElementById('exportBtn').onclick=()=>{
@@ -978,7 +982,12 @@ document.getElementById('importFile').addEventListener('change',e=>{
 
 // TOAST
 let _tt;
-function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3000);}
+function toast(msg){
+  if(msg.includes('⚠')||msg.includes('deleted')||msg.includes('removed')) haptic('error');
+  else haptic('success');
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3000);
+}
 
 // KEYBOARD
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if(e.key==='n'&&!e.target.matches('input,select,textarea'))openAddTx();});
@@ -1012,28 +1021,12 @@ function haptic(style='light'){
 
 // Wire haptics to all interactive elements
 document.addEventListener('click', e => {
-  const t = e.target.closest('button, .nav-item, .mob-btn, .cat-item, .rta-box, .goal-card, .account-card, .tx-item, .add-acc-card, .add-cat-inline');
+  const t = e.target.closest('button, .nav-item, .mob-btn, .rta-box, .add-acc-card, .add-cat-inline');
   if(!t) return;
-  if(t.matches('.btn-primary, .goal-add-btn')) haptic('medium');
-  else if(t.matches('.del-btn, .tx-del-btn, .goal-del, .acc-del')) haptic('error');
-  else if(t.matches('.nav-item, .mob-btn')) haptic('light');
-  else if(t.matches('.month-btn')) haptic('light');
-  else haptic('light');
+  if(t.matches('.del-btn, .tx-del-btn, .goal-del, .acc-del')) haptic('error');
+  else if(t.matches('.nav-item, .mob-btn, .month-btn')) haptic('light');
+  else haptic('medium');
 }, {passive:true});
-
-// Extra haptic on modal open/close
-const _origOpen = openModal;
-function openModal(html){ haptic('medium'); _origOpen(html); }
-const _origClose = closeModal;
-function closeModal(){ const m=document.getElementById('mOv'); if(m){ haptic('light'); m.remove(); } }
-
-// Haptic on successful save actions
-const _origToast = toast;
-function toast(msg){
-  if(msg.includes('!')||msg.includes('✓')) haptic('success');
-  else if(msg.includes('⚠')||msg.includes('deleted')||msg.includes('removed')) haptic('error');
-  _origToast(msg);
-}
 
 // ── Service Worker ──
 if('serviceWorker' in navigator){
