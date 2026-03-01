@@ -408,6 +408,47 @@
       </div>
     </div>
   </div>
+
+  <!-- SETTINGS (mobile only) -->
+  <div class="page" id="page-settings">
+    <div style="max-width:480px;margin:0 auto;">
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;margin-bottom:14px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-dim);margin-bottom:12px;">Current Month</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="month-btn" id="prevMonth2" style="font-size:22px;padding:6px 14px;">&#8249;</button>
+          <span id="monthLabel2" style="flex:1;text-align:center;font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;"></span>
+          <button class="month-btn" id="nextMonth2" style="font-size:22px;padding:6px 14px;">&#8250;</button>
+        </div>
+      </div>
+
+      <div style="background:linear-gradient(135deg,rgba(184,240,80,.1),rgba(80,207,240,.08));border:1px solid rgba(184,240,80,.25);border-radius:var(--r);padding:20px 22px;margin-bottom:14px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:6px;">Ready to Assign</div>
+        <div id="settingsRta" style="font-family:'Fraunces',serif;font-size:30px;font-weight:500;letter-spacing:-1px;color:var(--accent);"></div>
+        <div id="settingsRtaSub" style="font-size:12px;color:var(--text-dim);margin-top:4px;"></div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;margin-bottom:14px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-dim);margin-bottom:10px;">Sync Between Devices</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">Export your budget as a JSON file, then import it on another device to sync. Great for keeping laptop and iPhone in sync via iCloud Drive.</div>
+        <div style="display:flex;gap:10px;">
+          <button id="exportBtn2" style="flex:1;padding:14px;border-radius:var(--r-sm);border:1px solid rgba(80,207,240,.3);background:rgba(80,207,240,.07);color:var(--accent2);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">&#8593; Export</button>
+          <button id="importBtn2" style="flex:1;padding:14px;border-radius:var(--r-sm);border:1px solid rgba(240,160,80,.3);background:rgba(240,160,80,.07);color:var(--accent3);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">&#8595; Import</button>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-dim);padding:16px 20px 10px;">More Pages</div>
+        <button onclick="switchPage('reports')" style="width:100%;padding:14px 20px;border:none;border-top:1px solid var(--border);background:none;color:var(--text);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;justify-content:space-between;align-items:center;">&#9638; Reports &amp; Analytics <span style="color:var(--text-dim);">→</span></button>
+      </div>
+
+      <div style="text-align:center;padding:16px 0 8px;color:var(--text-dim);font-size:11px;line-height:1.9;">
+        flo v3.0 · CAD · Zero-Based Budgeting<br>
+        Data stored locally on this device only.
+      </div>
+    </div>
+  </div>
+
 </div>
 </div>
 
@@ -417,6 +458,7 @@
   <button class="mob-btn" data-page="transactions"><span class="mi">&#8644;</span>Txns</button>
   <button class="mob-btn" data-page="accounts"><span class="mi">&#9681;</span>Accounts</button>
   <button class="mob-btn" data-page="goals"><span class="mi">&#9678;</span>Goals</button>
+  <button class="mob-btn" data-page="settings"><span class="mi">&#9881;</span>More</button>
 </div>
 
 <div id="toast"></div>
@@ -510,7 +552,7 @@ function switchPage(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
-  const T={dashboard:'Dashboard',budget:'Budget',transactions:'Transactions',accounts:'Accounts',goals:'Goals',reports:'Reports'};
+  const T={dashboard:'Dashboard',budget:'Budget',transactions:'Transactions',accounts:'Accounts',goals:'Goals',reports:'Reports',settings:'More'};
   document.getElementById('pageTitle').textContent=T[p]||p;
   renderPage(p);
 }
@@ -523,25 +565,38 @@ function renderPage(p){
   else if(p==='accounts')renderAccounts();
   else if(p==='goals')renderGoals();
   else if(p==='reports')renderReports();
+  else if(p==='settings')renderSettings();
 }
 
 function renderAll(){
+  // Sidebar (desktop)
   document.getElementById('monthLabel').textContent=fmtMonth(mDate());
+  // Settings page (mobile)
+  const ml2=document.getElementById('monthLabel2');
+  if(ml2) ml2.textContent=fmtMonth(mDate());
+
   const rta=readyToAssign();
+  const rtaFmt=cad(rta);
+  const rtaSub= D.accounts.length===0 ? 'Add an account to start budgeting' :
+                rta>0 ? 'left to assign to categories' :
+                rta<0 ? '⚠ Over-assigned! Reduce categories' : '✓ Every dollar assigned';
+
+  // Sidebar RTA
   const el=document.getElementById('rtaAmount');
-  el.textContent=cad(rta);
-  if(D.accounts.length===0){
-    el.className='rta-amount';
-    el.style.color='var(--text-dim)';
-    document.getElementById('rtaSub').textContent='Add an account to start budgeting';
-  } else {
-    el.style.color='';
-    el.className='rta-amount '+(rta>0?'ok':rta<0?'over':'');
-    document.getElementById('rtaSub').textContent=
-      rta>0 ? 'left to assign to categories' :
-      rta<0 ? '⚠ Over-assigned! Reduce categories' :
-              '✓ Every dollar assigned';
+  el.textContent=rtaFmt;
+  if(D.accounts.length===0){el.className='rta-amount';el.style.color='var(--text-dim)';}
+  else{el.style.color='';el.className='rta-amount '+(rta>0?'ok':rta<0?'over':'');}
+  document.getElementById('rtaSub').textContent=rtaSub;
+
+  // Settings page RTA
+  const sRta=document.getElementById('settingsRta');
+  const sRtaSub=document.getElementById('settingsRtaSub');
+  if(sRta){
+    sRta.textContent=rtaFmt;
+    sRta.style.color=D.accounts.length===0?'var(--text-dim)':rta>0?'var(--accent)':rta<0?'var(--danger)':'var(--text)';
   }
+  if(sRtaSub) sRtaSub.textContent=rtaSub;
+
   renderPage(activePage);
 }
 
@@ -1078,18 +1133,45 @@ function closeModal(){
 }
 
 // EXPORT/IMPORT
-document.getElementById('exportBtn').onclick=()=>{
+function doExport(){
   const bl=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='flo-budget-'+D.month+'.json';a.click();
-  toast('Exported! Upload this file on your other device to sync.');
-};
-document.getElementById('importBtn').onclick=()=>document.getElementById('importFile').click();
+  toast('Exported! Import this file on your other device.');
+}
+function doImport(){document.getElementById('importFile').click();}
+
+document.getElementById('exportBtn').onclick=doExport;
+document.getElementById('importBtn').onclick=doImport;
+document.getElementById('exportBtn2').onclick=doExport;
+document.getElementById('importBtn2').onclick=doImport;
+
 document.getElementById('importFile').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
   r.onload=ev=>{try{const p=JSON.parse(ev.target.result);if(p.transactions&&p.categoryGroups){D={...D,...p};save();renderAll();toast('Data imported!');}else toast('Invalid file format');}catch{toast('Failed to read file');}};
   r.readAsText(f);e.target.value='';
 });
+
+// Month nav — second set (settings page)
+document.getElementById('prevMonth2').onclick=()=>{const d=mDate();d.setMonth(d.getMonth()-1);D.month=d.toISOString().slice(0,7);save();renderAll();};
+document.getElementById('nextMonth2').onclick=()=>{const d=mDate();d.setMonth(d.getMonth()+1);D.month=d.toISOString().slice(0,7);save();renderAll();};
+
+// SETTINGS render (just keeps RTA fresh — content is static HTML)
+function renderSettings(){
+  const rta=readyToAssign();
+  const sRta=document.getElementById('settingsRta');
+  const sRtaSub=document.getElementById('settingsRtaSub');
+  const ml2=document.getElementById('monthLabel2');
+  if(ml2) ml2.textContent=fmtMonth(mDate());
+  if(sRta){
+    sRta.textContent=cad(rta);
+    sRta.style.color=D.accounts.length===0?'var(--text-dim)':rta>0?'var(--accent)':rta<0?'var(--danger)':'var(--text)';
+  }
+  if(sRtaSub) sRtaSub.textContent=
+    D.accounts.length===0 ? 'Add an account to start budgeting' :
+    rta>0 ? 'left to assign to categories' :
+    rta<0 ? '⚠ Over-assigned! Reduce categories' : '✓ Every dollar assigned';
+}
 
 // TOAST
 let _tt;

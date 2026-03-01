@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flo-budget-v2';
+const CACHE_NAME = 'flo-budget-v3';
 const BASE = '/flo-budget';
 const ASSETS = [
   BASE + '/',
@@ -10,7 +10,9 @@ const ASSETS = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
