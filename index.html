@@ -630,8 +630,8 @@ function renderBudget(){
 }
 
 function toggleGroup(id){const g=D.categoryGroups.find(x=>x.id===id);if(g){g.collapsed=!g.collapsed;save();renderBudget();}}
-function deleteGroup(id){if(!confirm('Delete this group and all categories?'))return;D.categoryGroups=D.categoryGroups.filter(g=>g.id!==id);save();renderBudget();toast('Group deleted');}
-function deleteCat(gid,cid){const g=D.categoryGroups.find(x=>x.id===gid);if(g){g.categories=g.categories.filter(c=>c.id!==cid);save();renderBudget();toast('Category removed');}}
+function deleteGroup(id){if(!confirm('Delete this group and all categories?'))return;D.categoryGroups=D.categoryGroups.filter(g=>g.id!==id);save();renderAll();toast('Group deleted');}
+function deleteCat(gid,cid){const g=D.categoryGroups.find(x=>x.id===gid);if(g){g.categories=g.categories.filter(c=>c.id!==cid);save();renderAll();toast('Category removed');}}
 
 function editBudget(cid){
   const cat=D.categoryGroups.flatMap(g=>g.categories).find(c=>c.id===cid);if(!cat)return;
@@ -647,7 +647,7 @@ function saveBE(cid){
   const cat=D.categoryGroups.flatMap(g=>g.categories).find(c=>c.id===cid);if(!cat)return;
   cat.budgeted=parseFloat(document.getElementById('ebB').value)||0;
   cat.limit=parseFloat(document.getElementById('ebL').value)||null;
-  save();closeModal();renderBudget();toast('Budget updated');
+  save();closeModal();renderAll();toast('Budget updated');
 }
 function addCatInGroup(gid){openAddCatModal(gid);}
 
@@ -748,7 +748,7 @@ document.getElementById('addGroupBtn').onclick=()=>{
     <div class="form-group"><label>Group Name</label><input class="form-input" id="grpName" placeholder="e.g. 🏠 Housing"></div>
     <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveGroup()">Add Group</button></div>`);
 };
-function saveGroup(){const n=document.getElementById('grpName').value.trim();if(!n){toast('Enter a name');return;}D.categoryGroups.push({id:uid(),name:n,collapsed:false,categories:[]});save();closeModal();renderBudget();toast('Group added!');}
+function saveGroup(){const n=document.getElementById('grpName').value.trim();if(!n){toast('Enter a name');return;}D.categoryGroups.push({id:uid(),name:n,collapsed:false,categories:[]});save();closeModal();renderAll();toast('Group added!');}
 
 document.getElementById('addCatBtn').onclick=()=>{if(!D.categoryGroups.length){toast('Add a group first!');return;}openAddCatModal(null);};
 function openAddCatModal(pgid){
@@ -773,7 +773,7 @@ function saveCat(){
   const g=D.categoryGroups.find(x=>x.id===gid);if(!g)return;
   const colors=['#b8f050','#50cff0','#f0a050','#f050a8','#50e89a','#a078f8'];
   g.categories.push({id:uid(),name:n,emoji:e,budgeted:b,limit:l,color:colors[g.categories.length%colors.length]});
-  save();closeModal();renderBudget();toast('Category added!');
+  save();closeModal();renderAll();toast('Category added!');
 }
 
 // ACCOUNTS
@@ -786,7 +786,13 @@ function renderAccounts(){
       <div class="add-acc-card" onclick="openAddAccount()"><div style="font-size:30px">+</div><div style="font-size:13px;font-weight:500;">Add Account</div></div>
     </div>`;
 }
-function deleteAccount(id){if(!confirm('Delete this account?'))return;D.accounts=D.accounts.filter(a=>a.id!==id);save();renderAccounts();toast('Account deleted');}
+function deleteAccount(id){
+  if(!confirm('Delete this account? Associated transactions will also be removed.'))return;
+  D.accounts=D.accounts.filter(a=>a.id!==id);
+  // Remove all transactions linked to this account so income/expense totals stay correct
+  D.transactions=D.transactions.filter(t=>t.account!==id);
+  save();renderAll();toast('Account deleted');
+}
 function openAddAccount(){
   openModal(`<h3>Add Account</h3>
     <div class="form-group"><label>Account Name</label><input class="form-input" id="aN" placeholder="e.g. TD Chequing"></div>
@@ -799,7 +805,8 @@ function openAddAccount(){
 function saveAccount(){
   const n=document.getElementById('aN').value.trim(),t=document.getElementById('aT').value,b=parseFloat(document.getElementById('aB').value)||0;
   if(!n){toast('Enter account name');return;}
-  D.accounts.push({id:uid(),name:n,type:t,balance:b});save();closeModal();renderAccounts();toast('Account added!');
+  D.accounts.push({id:uid(),name:n,type:t,balance:b});
+  save();closeModal();renderAll();toast('Account added!');
 }
 
 // GOALS
@@ -825,7 +832,7 @@ function renderGoals(){
     </div>`;
   }).join('');
 }
-function deleteGoal(id){D.goals=D.goals.filter(g=>g.id!==id);save();renderGoals();toast('Goal deleted');}
+function deleteGoal(id){D.goals=D.goals.filter(g=>g.id!==id);save();renderAll();toast('Goal deleted');}
 function addContrib(id){
   const g=D.goals.find(x=>x.id===id);if(!g)return;
   openModal(`<h3>Add to — ${g.emoji||''} ${g.name}</h3>
@@ -840,7 +847,8 @@ function saveContrib(id){
   const g=D.goals.find(x=>x.id===id);if(!g)return;
   const n=parseFloat(document.getElementById('ca').value)||0;
   if(n<=0){toast('Enter a valid amount');return;}
-  g.saved=Math.min(g.target,g.saved+n);save();closeModal();renderGoals();toast(cadPos(n)+' added to '+g.name+'!');
+  g.saved=Math.min(g.target,g.saved+n);
+  save();closeModal();renderAll();toast(cadPos(n)+' added to '+g.name+'!');
 }
 function editGoal(id){
   const g=D.goals.find(x=>x.id===id);if(!g)return;
@@ -863,7 +871,7 @@ function saveEG(id){
   g.target=parseFloat(document.getElementById('geT').value)||g.target;
   g.saved=parseFloat(document.getElementById('geS').value)||g.saved;
   g.deadline=document.getElementById('geD').value||null;
-  save();closeModal();renderGoals();toast('Goal updated!');
+  save();closeModal();renderAll();toast('Goal updated!');
 }
 document.getElementById('addGoalBtn').onclick=()=>{
   openModal(`<h3>New Savings Goal</h3>
@@ -885,7 +893,7 @@ function saveNG(){
   if(!n||!t){toast('Enter name and target amount');return;}
   const c=['#b8f050','#50cff0','#f0a050','#f050a8','#50e89a','#a078f8'];
   D.goals.push({id:uid(),name:n,emoji:e,target:t,saved:s,deadline:d,color:c[D.goals.length%c.length]});
-  save();closeModal();renderGoals();toast('Goal created!');
+  save();closeModal();renderAll();toast('Goal created!');
 }
 
 // REPORTS
