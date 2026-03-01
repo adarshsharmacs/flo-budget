@@ -421,71 +421,57 @@
 <input type="file" id="importFile" accept=".json" style="display:none">
 
 <script>
-const KEY='flo_v2';
+const KEY='flo_v3'; // bumped version clears any stale v2 data
 let D={accounts:[],categoryGroups:[],transactions:[],goals:[],month:new Date().toISOString().slice(0,7)};
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){}}
-function load(){try{const r=localStorage.getItem(KEY);if(r){const p=JSON.parse(r);D={...D,...p};}else seedDemo();}catch(e){seedDemo();}}
+function load(){
+  // Always clear old stale versions
+  try{localStorage.removeItem('flo_v2');localStorage.removeItem('flo_budget_v1');}catch(e){}
+  try{const r=localStorage.getItem(KEY);if(r){const p=JSON.parse(r);D={...D,...p};}else seedFresh();}catch(e){seedFresh();}
+}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
 function cad(n){const a=Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');return(n<0?'-':'')+'CA$'+a;}
 function cadPos(n){return 'CA$'+Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
 
-function seedDemo(){
-  D.accounts=[
-    {id:'a1',name:'TD Chequing',type:'Chequing',balance:4280.50},
-    {id:'a2',name:'EQ Bank Savings',type:'Savings',balance:12600.00},
-    {id:'a3',name:'Scotiabank Visa',type:'Credit',balance:-830.00},
-    {id:'a4',name:'TFSA',type:'Investment',balance:18400.00},
-  ];
+// Clean slate — categories preset, zero dollars everywhere
+function seedFresh(){
+  D.accounts=[];
+  D.transactions=[];
+  D.goals=[];
   D.categoryGroups=[
     {id:'g1',name:'🏠 Housing',collapsed:false,categories:[
-      {id:'c1',name:'Rent',emoji:'🏠',budgeted:1800,limit:1800,color:'#b8f050'},
-      {id:'c2',name:'Electricity',emoji:'⚡',budgeted:90,limit:100,color:'#50cff0'},
-      {id:'c3',name:'Internet',emoji:'📡',budgeted:65,limit:70,color:'#f0a050'},
+      {id:'c1',name:'Rent / Mortgage',emoji:'🏠',budgeted:0,limit:null,color:'#b8f050'},
+      {id:'c2',name:'Electricity',emoji:'⚡',budgeted:0,limit:null,color:'#50cff0'},
+      {id:'c3',name:'Internet',emoji:'📡',budgeted:0,limit:null,color:'#f0a050'},
+      {id:'c4',name:'Home Insurance',emoji:'🔒',budgeted:0,limit:null,color:'#a078f8'},
     ]},
     {id:'g2',name:'🍔 Food',collapsed:false,categories:[
-      {id:'c4',name:'Groceries',emoji:'🛒',budgeted:500,limit:550,color:'#b8f050'},
-      {id:'c5',name:'Dining Out',emoji:'🍕',budgeted:200,limit:220,color:'#f050a8'},
-      {id:'c6',name:'Coffee',emoji:'☕',budgeted:60,limit:70,color:'#f0a050'},
+      {id:'c5',name:'Groceries',emoji:'🛒',budgeted:0,limit:null,color:'#b8f050'},
+      {id:'c6',name:'Dining Out',emoji:'🍕',budgeted:0,limit:null,color:'#f050a8'},
+      {id:'c7',name:'Coffee',emoji:'☕',budgeted:0,limit:null,color:'#f0a050'},
     ]},
     {id:'g3',name:'🚗 Transport',collapsed:false,categories:[
-      {id:'c7',name:'Gas',emoji:'⛽',budgeted:130,limit:150,color:'#f050a8'},
-      {id:'c8',name:'Transit / Uber',emoji:'🚌',budgeted:80,limit:90,color:'#50cff0'},
+      {id:'c8',name:'Gas',emoji:'⛽',budgeted:0,limit:null,color:'#f050a8'},
+      {id:'c9',name:'Transit / Uber',emoji:'🚌',budgeted:0,limit:null,color:'#50cff0'},
+      {id:'c10',name:'Car Insurance',emoji:'🚘',budgeted:0,limit:null,color:'#a078f8'},
     ]},
     {id:'g4',name:'💪 Health',collapsed:false,categories:[
-      {id:'c9',name:'Gym',emoji:'🏋️',budgeted:55,limit:55,color:'#a078f8'},
-      {id:'c10',name:'Pharmacy',emoji:'💊',budgeted:40,limit:60,color:'#50e89a'},
+      {id:'c11',name:'Gym',emoji:'🏋️',budgeted:0,limit:null,color:'#a078f8'},
+      {id:'c12',name:'Pharmacy',emoji:'💊',budgeted:0,limit:null,color:'#50e89a'},
+      {id:'c13',name:'Doctor / Dental',emoji:'🏥',budgeted:0,limit:null,color:'#50cff0'},
     ]},
     {id:'g5',name:'🎉 Fun',collapsed:false,categories:[
-      {id:'c11',name:'Entertainment',emoji:'🎮',budgeted:100,limit:120,color:'#b8f050'},
-      {id:'c12',name:'Subscriptions',emoji:'📺',budgeted:55,limit:60,color:'#50cff0'},
+      {id:'c14',name:'Entertainment',emoji:'🎮',budgeted:0,limit:null,color:'#b8f050'},
+      {id:'c15',name:'Subscriptions',emoji:'📺',budgeted:0,limit:null,color:'#50cff0'},
+      {id:'c16',name:'Clothing',emoji:'👕',budgeted:0,limit:null,color:'#f050a8'},
     ]},
-  ];
-  const m=D.month;
-  D.transactions=[
-    {id:uid(),name:'Biweekly Pay',amount:2800,type:'income',category:null,account:'a1',date:m+'-01',notes:''},
-    {id:uid(),name:'Rent',amount:-1800,type:'expense',category:'c1',account:'a1',date:m+'-02',notes:''},
-    {id:uid(),name:'Fortinos Groceries',amount:-112.40,type:'expense',category:'c4',account:'a1',date:m+'-04',notes:''},
-    {id:uid(),name:'Tim Hortons',amount:-8.75,type:'expense',category:'c6',account:'a3',date:m+'-05',notes:''},
-    {id:uid(),name:'Shell — Gas',amount:-68.00,type:'expense',category:'c7',account:'a3',date:m+'-06',notes:''},
-    {id:uid(),name:'Netflix',amount:-20.99,type:'expense',category:'c12',account:'a3',date:m+'-07',notes:''},
-    {id:uid(),name:'Montana\'s Dinner',amount:-52.30,type:'expense',category:'c5',account:'a3',date:m+'-08',notes:''},
-    {id:uid(),name:'Biweekly Pay',amount:2800,type:'income',category:null,account:'a1',date:m+'-15',notes:''},
-    {id:uid(),name:'Hydro Bill',amount:-88.00,type:'expense',category:'c2',account:'a1',date:m+'-16',notes:''},
-    {id:uid(),name:'Costco Run',amount:-148.60,type:'expense',category:'c4',account:'a3',date:m+'-17',notes:''},
-    {id:uid(),name:'GoodLife Fitness',amount:-54.99,type:'expense',category:'c9',account:'a3',date:m+'-20',notes:''},
-    {id:uid(),name:'Rogers Internet',amount:-65.00,type:'expense',category:'c3',account:'a1',date:m+'-21',notes:''},
-    {id:uid(),name:'Shoppers Drug Mart',amount:-34.20,type:'expense',category:'c10',account:'a3',date:m+'-22',notes:''},
-    {id:uid(),name:'Freelance Work',amount:650,type:'income',category:null,account:'a1',date:m+'-23',notes:''},
-    {id:uid(),name:'Spotify',amount:-12.99,type:'expense',category:'c12',account:'a3',date:m+'-24',notes:''},
-    {id:uid(),name:'TTC Monthly Pass',amount:-156.00,type:'expense',category:'c8',account:'a1',date:m+'-25',notes:''},
-  ];
-  D.goals=[
-    {id:uid(),name:'Emergency Fund',emoji:'🛡️',target:15000,saved:6800,deadline:'2026-12-31',color:'#b8f050'},
-    {id:uid(),name:'Vacation to BC',emoji:'✈️',target:4500,saved:1200,deadline:'2026-08-01',color:'#50cff0'},
-    {id:uid(),name:'New MacBook',emoji:'💻',target:2800,saved:900,deadline:'2026-10-01',color:'#f0a050'},
-    {id:uid(),name:'Car Down Payment',emoji:'🚗',target:8000,saved:2100,deadline:'2027-06-01',color:'#a078f8'},
+    {id:'g6',name:'💰 Savings',collapsed:false,categories:[
+      {id:'c17',name:'Emergency Fund',emoji:'🛡️',budgeted:0,limit:null,color:'#b8f050'},
+      {id:'c18',name:'Investments / TFSA',emoji:'📈',budgeted:0,limit:null,color:'#50e89a'},
+      {id:'c19',name:'Vacation',emoji:'✈️',budgeted:0,limit:null,color:'#50cff0'},
+    ]},
   ];
   save();
 }
@@ -496,8 +482,18 @@ const catSpent=(cid,m)=>Math.abs(mTxns(m).filter(t=>t.category===cid&&t.type==='
 const totalIncome=(m)=>mTxns(m).filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
 const totalExpenses=(m)=>Math.abs(mTxns(m).filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0));
 const totalBudgeted=()=>D.categoryGroups.flatMap(g=>g.categories).reduce((s,c)=>s+c.budgeted,0);
+
+// Net worth = sum of all positive accounts (assets) + negative (liabilities)
 const totalNetWorth=()=>D.accounts.reduce((s,a)=>s+a.balance,0);
-const readyToAssign=()=>totalIncome(D.month)-totalBudgeted();
+
+// ── YNAB-correct Ready to Assign ──
+// = sum of all account balances (your real money) − total assigned to categories
+// If no accounts exist → CA$0.00 (you have no money to assign)
+const readyToAssign=()=>{
+  if(D.accounts.length===0) return 0;
+  const totalMoney = D.accounts.reduce((s,a)=>s+a.balance, 0);
+  return totalMoney - totalBudgeted();
+};
 
 function mDate(){return new Date(D.month+'-01');}
 function fmtMonth(d){return d.toLocaleDateString('en-CA',{month:'long',year:'numeric'});}
@@ -532,8 +528,18 @@ function renderAll(){
   const rta=readyToAssign();
   const el=document.getElementById('rtaAmount');
   el.textContent=cad(rta);
-  el.className='rta-amount '+(rta>=0?'ok':'over');
-  document.getElementById('rtaSub').textContent=rta>0?'left to assign to categories':rta<0?'Over-budgeted! Reduce categories':'All income assigned';
+  if(D.accounts.length===0){
+    el.className='rta-amount';
+    el.style.color='var(--text-dim)';
+    document.getElementById('rtaSub').textContent='Add an account to start budgeting';
+  } else {
+    el.style.color='';
+    el.className='rta-amount '+(rta>0?'ok':rta<0?'over':'');
+    document.getElementById('rtaSub').textContent=
+      rta>0 ? 'left to assign to categories' :
+      rta<0 ? '⚠ Over-assigned! Reduce categories' :
+              '✓ Every dollar assigned';
+  }
   renderPage(activePage);
 }
 
@@ -541,13 +547,14 @@ function renderAll(){
 function renderDashboard(){
   const m=D.month,inc=totalIncome(m),exp=totalExpenses(m),net=inc-exp,nw=totalNetWorth();
   const rate=inc>0?net/inc*100:0;
+  const rta=readyToAssign();
   document.getElementById('dashStats').innerHTML=`
-    <div class="stat-card c-green"><div class="stat-label">Income</div><div class="stat-value pos">${cad(inc)}</div><div class="stat-sub">This month</div></div>
-    <div class="stat-card c-orange"><div class="stat-label">Expenses</div><div class="stat-value neg">${cad(exp)}</div><div class="stat-sub">This month</div></div>
-    <div class="stat-card c-blue"><div class="stat-label">Net Cash Flow</div><div class="stat-value ${net>=0?'pos':'neg'}">${cad(net)}</div><div class="stat-sub">${net>=0?'Surplus':'Deficit'}</div></div>
-    <div class="stat-card c-pink"><div class="stat-label">Savings Rate</div><div class="stat-value ${rate>=20?'pos':rate>=10?'warn':'neg'}">${rate.toFixed(0)}%</div><div class="stat-sub">Of income</div></div>
-    <div class="stat-card c-purple"><div class="stat-label">Net Worth</div><div class="stat-value ${nw>=0?'pos':'neg'}">${cad(nw)}</div><div class="stat-sub">All accounts</div></div>
-    <div class="stat-card c-green"><div class="stat-label">Ready to Assign</div><div class="stat-value ${readyToAssign()>=0?'pos':'neg'}">${cad(readyToAssign())}</div><div class="stat-sub">Zero-based</div></div>
+    <div class="stat-card c-blue"><div class="stat-label">Account Balances</div><div class="stat-value ${nw>=0?'pos':'neg'}">${cad(nw)}</div><div class="stat-sub">Total net worth</div></div>
+    <div class="stat-card c-green"><div class="stat-label">Income This Month</div><div class="stat-value pos">${cad(inc)}</div><div class="stat-sub">From transactions</div></div>
+    <div class="stat-card c-orange"><div class="stat-label">Spent This Month</div><div class="stat-value neg">${cad(exp)}</div><div class="stat-sub">From transactions</div></div>
+    <div class="stat-card c-pink"><div class="stat-label">Net Cash Flow</div><div class="stat-value ${net>=0?'pos':'neg'}">${cad(net)}</div><div class="stat-sub">${net>=0?'Surplus':'Deficit'} this month</div></div>
+    <div class="stat-card c-purple"><div class="stat-label">Savings Rate</div><div class="stat-value ${rate>=20?'pos':rate>=10?'warn':'neg'}">${inc>0?rate.toFixed(0)+'%':'—'}</div><div class="stat-sub">Of income saved</div></div>
+    <div class="stat-card c-green"><div class="stat-label">Ready to Assign</div><div class="stat-value ${rta>0?'pos':rta<0?'neg':''}">${D.accounts.length?cad(rta):'—'}</div><div class="stat-sub">${D.accounts.length?'Unassigned money':'Add an account first'}</div></div>
   `;
   const recent=[...D.transactions].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
   document.getElementById('dashTxList').innerHTML=recent.length
@@ -570,19 +577,29 @@ function renderDashboard(){
 
 // BUDGET
 function renderBudget(){
-  const m=D.month,inc=totalIncome(m),budg=totalBudgeted(),rta=readyToAssign(),exp=totalExpenses(m);
+  const m=D.month,budg=totalBudgeted(),rta=readyToAssign(),exp=totalExpenses(m);
+  const totalMoney=D.accounts.reduce((s,a)=>s+a.balance,0);
   const pct=budg>0?Math.min(100,exp/budg*100):0;
-  document.getElementById('zbbBar').innerHTML=`<div class="zbb-bar">
-    <div class="zbb-item"><div class="zbb-lbl">Income</div><div class="zbb-val" style="color:var(--text)">${cad(inc)}</div></div>
-    <div class="zbb-divider"></div>
-    <div class="zbb-item"><div class="zbb-lbl">Budgeted</div><div class="zbb-val ${rta<0?'over':''}" style="${rta>=0?'color:var(--text)':''}">${cad(budg)}</div></div>
-    <div class="zbb-divider"></div>
-    <div class="zbb-item"><div class="zbb-lbl">Ready to Assign</div><div class="zbb-val ${rta>=0?'ok':'over'}">${cad(rta)}</div></div>
-    <div class="zbb-divider"></div>
-    <div class="zbb-item"><div class="zbb-lbl">Spent</div><div class="zbb-val" style="color:var(--text)">${cad(exp)}</div></div>
-    <div class="zbb-divider"></div>
-    <div class="zbb-track"><div class="zbb-lbl">Budget Used — ${pct.toFixed(0)}%</div><div class="zbb-track-bar"><div class="zbb-track-fill" style="width:${pct}%"></div></div></div>
-  </div>`;
+
+  const noAcctMsg = D.accounts.length===0
+    ? `<div style="background:rgba(240,192,80,.08);border:1px solid rgba(240,192,80,.2);border-radius:var(--r-sm);padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--warning);display:flex;align-items:center;gap:10px;">
+        <span style="font-size:18px;">💡</span>
+        <span>Add an account first — your account balances tell Flo how much money you actually have to assign to categories.</span>
+       </div>` : '';
+
+  document.getElementById('zbbBar').innerHTML=`
+    ${noAcctMsg}
+    <div class="zbb-bar">
+      <div class="zbb-item"><div class="zbb-lbl">Account Balances</div><div class="zbb-val" style="color:${totalMoney>=0?'var(--text)':'var(--danger)'}">${cad(totalMoney)}</div></div>
+      <div class="zbb-divider"></div>
+      <div class="zbb-item"><div class="zbb-lbl">Assigned</div><div class="zbb-val ${rta<0?'over':''}" style="${rta>=0?'color:var(--text)':''}">${cad(budg)}</div></div>
+      <div class="zbb-divider"></div>
+      <div class="zbb-item"><div class="zbb-lbl">Ready to Assign</div><div class="zbb-val ${rta>0?'ok':rta<0?'over':''}">${cad(rta)}</div></div>
+      <div class="zbb-divider"></div>
+      <div class="zbb-item"><div class="zbb-lbl">Spent This Month</div><div class="zbb-val" style="color:var(--text)">${cad(exp)}</div></div>
+      <div class="zbb-divider"></div>
+      <div class="zbb-track"><div class="zbb-lbl">Budget Used — ${pct.toFixed(0)}%</div><div class="zbb-track-bar"><div class="zbb-track-fill" style="width:${pct}%"></div></div></div>
+    </div>`;
   let html='';
   D.categoryGroups.forEach(g=>{
     const gb=g.categories.reduce((s,c)=>s+c.budgeted,0);
