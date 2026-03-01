@@ -178,9 +178,16 @@
   .acc-balance{font-family:'Fraunces',serif;font-size:26px;font-weight:500;margin-top:4px;}
   .acc-balance.pos{color:var(--accent2);}
   .acc-balance.neg{color:var(--danger);}
-  .acc-del{position:absolute;top:14px;right:12px;background:none;border:none;color:var(--text-dim);cursor:pointer;opacity:0;transition:opacity .15s;font-size:16px;line-height:1;}
-  .account-card:hover .acc-del{opacity:1;}
+  .acc-card-actions{position:absolute;top:10px;right:8px;display:flex;gap:2px;opacity:0;transition:opacity .15s;}
+  .account-card:hover .acc-card-actions{opacity:1;}
+  .acc-edit{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:3px 6px;border-radius:4px;transition:background .15s,color .15s;line-height:1;}
+  .acc-edit:hover{background:var(--surface3);color:var(--accent);}
+  .acc-del{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:3px 6px;border-radius:4px;transition:background .15s,color .15s;line-height:1;}
   .acc-del:hover{color:var(--danger);}
+  .tx-actions{display:flex;gap:2px;align-items:center;}
+  .tx-edit-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:4px;transition:background .15s,color .15s;line-height:1;opacity:0;}
+  .tx-item:hover .tx-edit-btn{opacity:1;}
+  .tx-edit-btn:hover{background:var(--surface3);color:var(--accent);}
   .add-acc-card{background:transparent;border:2px dashed var(--border);border-radius:var(--r);padding:20px 22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:border-color .15s,background .15s;color:var(--text-dim);min-height:130px;}
   .add-acc-card:hover{border-color:var(--accent2);background:rgba(80,207,240,.04);color:var(--accent2);}
 
@@ -277,6 +284,8 @@
     .cat-col-header,.cat-item{grid-template-columns:1fr 80px 75px 30px;}
     .hide-mob{display:none!important;}
     .tx-header-row,.tx-item{grid-template-columns:38px 1fr 80px 28px;}
+    .acc-card-actions{opacity:1;}
+    .tx-edit-btn{opacity:1;}
   }
   ::-webkit-scrollbar{width:4px;height:4px;}
   ::-webkit-scrollbar-track{background:transparent;}
@@ -774,7 +783,7 @@ function txRowHTML(t,showDel=false){
     <div><div class="tx-name">${t.name}</div><div class="tx-meta">${ds}${acc?' · '+acc.name:''}</div></div>
     <div class="tx-cat-col hide-mob">${cat?`<span class="cat-pill">${cat.emoji||''} ${cat.name}</span>`:''}</div>
     <div class="tx-amount ${t.type}">${t.type==='income'?'+':''}${cad(Math.abs(t.amount))}</div>
-    ${showDel?`<button class="tx-del-btn" onclick="deleteTx('${t.id}')">&#215;</button>`:'<div></div>'}
+    ${showDel?`<div class="tx-actions"><button class="tx-edit-btn" onclick="editTx('${t.id}')">&#9998;</button><button class="tx-del-btn" onclick="deleteTx('${t.id}')">&#215;</button></div>`:'<div></div>'}
   </div>`;
 }
 
@@ -802,6 +811,90 @@ function deleteTx(id){
     D.transactions=D.transactions.filter(t=>t.id!==id);
   }
   save();renderAll();toast('Transaction deleted');
+}
+
+function editTx(id){
+  const tx=D.transactions.find(t=>t.id===id);if(!tx)return;
+  // Transfers: just edit name, date, notes — don't allow changing amounts/accounts to keep balance integrity
+  if(tx.type==='transfer'){
+    const pair=D.transactions.filter(t=>t.transferId===tx.transferId);
+    openModal(`<h3>Edit Transfer</h3>
+      <div class="hint" style="margin-bottom:14px;color:var(--warning);">⚠ To change the amount or accounts, delete this transfer and create a new one.</div>
+      <div class="form-group"><label>Description</label><input class="form-input" id="etName" value="${tx.name}"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input class="form-input" id="etDate" type="date" value="${tx.date}"></div>
+        <div class="form-group"><label>Notes</label><input class="form-input" id="etNotes" value="${tx.notes||''}"></div>
+      </div>
+      <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveEditTx('${id}')">Save</button></div>`);
+    return;
+  }
+  const catOpts=D.categoryGroups.flatMap(g=>g.categories.map(c=>`<option value="${c.id}"${tx.category===c.id?' selected':''}>${g.name.replace(/[^\w\s]/g,'')} > ${c.emoji||''} ${c.name}</option>`)).join('');
+  const accOpts=D.accounts.map(a=>`<option value="${a.id}"${tx.account===a.id?' selected':''}>${a.name} (${cad(a.balance)})</option>`).join('');
+  const isIncome=tx.type==='income';
+  openModal(`<h3>Edit Transaction</h3>
+    <div class="type-toggle">
+      <button class="type-opt${!isIncome?' active':''}" data-t="expense" onclick="setTxType('expense')">💸 Expense</button>
+      <button class="type-opt${isIncome?' active income-a':''}" data-t="income" onclick="setTxType('income')">💰 Income</button>
+    </div>
+    <div class="form-group" style="margin-top:14px;"><label>Description</label><input class="form-input" id="etName" value="${tx.name}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Amount (CAD)</label><input class="form-input" id="etAmt" type="number" step="0.01" min="0" value="${Math.abs(tx.amount)}"></div>
+      <div class="form-group"><label>Date</label><input class="form-input" id="etDate" type="date" value="${tx.date}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Account</label><select class="form-select" id="etAcc">${accOpts||'<option value="">No accounts</option>'}</select></div>
+      <div class="form-group" id="txCatWrap"><label>Category</label><select class="form-select" id="etCat"><option value="">— Uncategorized —</option>${catOpts}</select></div>
+    </div>
+    <div class="form-group"><label>Notes</label><input class="form-input" id="etNotes" value="${tx.notes||''}"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveEditTx('${id}')">Save Changes</button></div>`);
+  // Set initial type state
+  _txType=tx.type;
+  const cw=document.getElementById('txCatWrap');
+  if(cw) cw.style.opacity=isIncome?'.4':'1';
+}
+
+function saveEditTx(id){
+  const tx=D.transactions.find(t=>t.id===id);if(!tx)return;
+
+  if(tx.type==='transfer'){
+    // Only update name/date/notes on both legs
+    const newName=document.getElementById('etName').value.trim();
+    const newDate=document.getElementById('etDate').value;
+    const newNotes=document.getElementById('etNotes').value.trim();
+    if(!newName||!newDate){toast('Fill in required fields');return;}
+    D.transactions.filter(t=>t.transferId===tx.transferId).forEach(t=>{
+      t.name=newName; t.date=newDate; t.notes=newNotes;
+    });
+    save();closeModal();renderAll();toast('Transfer updated!');
+    return;
+  }
+
+  const newName=document.getElementById('etName').value.trim();
+  const newAmt=parseFloat(document.getElementById('etAmt').value);
+  const newDate=document.getElementById('etDate').value;
+  const newAcc=document.getElementById('etAcc')?.value||null;
+  const newCat=document.getElementById('etCat')?.value||null;
+  const newNotes=document.getElementById('etNotes').value.trim();
+  if(!newName||isNaN(newAmt)||newAmt<=0||!newDate){toast('Fill in required fields');return;}
+
+  // Reverse old balance effect
+  const oldAcc=D.accounts.find(a=>a.id===tx.account);
+  if(oldAcc) oldAcc.balance-=tx.amount;
+
+  // Apply new values
+  tx.name=newName;
+  tx.date=newDate;
+  tx.notes=newNotes;
+  tx.category=newCat||null;
+  tx.account=newAcc||null;
+  tx.type=_txType;
+  tx.amount=_txType==='income'?Math.abs(newAmt):-Math.abs(newAmt);
+
+  // Apply new balance effect
+  const newAccObj=D.accounts.find(a=>a.id===newAcc);
+  if(newAccObj) newAccObj.balance+=tx.amount;
+
+  save();closeModal();renderAll();toast('Transaction updated!');
 }
 
 // ADD TRANSACTION
@@ -965,16 +1058,46 @@ function renderAccounts(){
   document.getElementById('accountsWrap').innerHTML=`
     <div style="margin-bottom:18px;"><div class="stat-card c-blue" style="max-width:280px;"><div class="stat-label">Total Net Worth</div><div class="stat-value ${nw>=0?'pos':'neg'}">${cad(nw)}</div><div class="stat-sub">All accounts · CAD</div></div></div>
     <div class="accounts-grid">
-      ${D.accounts.map(a=>`<div class="account-card"><button class="acc-del" onclick="deleteAccount('${a.id}')">&#215;</button><div class="acc-type">${a.type}</div><div class="acc-name">${a.name}</div><div class="acc-balance ${a.balance>=0?'pos':'neg'}">${cad(a.balance)}</div></div>`).join('')}
+      ${D.accounts.map(a=>`
+        <div class="account-card">
+          <div class="acc-card-actions">
+            <button class="acc-edit" onclick="editAccount('${a.id}')">&#9998;</button>
+            <button class="acc-del" onclick="deleteAccount('${a.id}')">&#215;</button>
+          </div>
+          <div class="acc-type">${a.type}</div>
+          <div class="acc-name">${a.name}</div>
+          <div class="acc-balance ${a.balance>=0?'pos':'neg'}">${cad(a.balance)}</div>
+        </div>`).join('')}
       <div class="add-acc-card" onclick="openAddAccount()"><div style="font-size:30px">+</div><div style="font-size:13px;font-weight:500;">Add Account</div></div>
     </div>`;
 }
 function deleteAccount(id){
   if(!confirm('Delete this account? Associated transactions will also be removed.'))return;
   D.accounts=D.accounts.filter(a=>a.id!==id);
-  // Remove all transactions linked to this account so income/expense totals stay correct
   D.transactions=D.transactions.filter(t=>t.account!==id);
   save();renderAll();toast('Account deleted');
+}
+function editAccount(id){
+  const a=D.accounts.find(x=>x.id===id);if(!a)return;
+  const types=['Chequing','Savings','Credit','TFSA','RRSP','Cash'];
+  const typeOpts=types.map(t=>`<option${t===a.type?' selected':''}>${t}</option>`).join('');
+  openModal(`<h3>Edit Account</h3>
+    <div class="form-group"><label>Account Name</label><input class="form-input" id="eaN" value="${a.name}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Type</label><select class="form-select" id="eaT">${typeOpts}</select></div>
+      <div class="form-group"><label>Balance (CAD)</label><input class="form-input" id="eaB" type="number" step="0.01" value="${a.balance}"></div>
+    </div>
+    <div class="hint">⚠ Editing the balance directly adjusts your net worth but doesn't create a transaction. Use this to correct mistakes.</div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveEditAccount('${id}')">Save Changes</button></div>`);
+}
+function saveEditAccount(id){
+  const a=D.accounts.find(x=>x.id===id);if(!a)return;
+  const n=document.getElementById('eaN').value.trim();
+  if(!n){toast('Enter account name');return;}
+  a.name=n;
+  a.type=document.getElementById('eaT').value;
+  a.balance=parseFloat(document.getElementById('eaB').value)||0;
+  save();closeModal();renderAll();toast('Account updated!');
 }
 function openAddAccount(){
   openModal(`<h3>Add Account</h3>
